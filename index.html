@@ -22,7 +22,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Stylesheet -->
-  <link rel="stylesheet" href="./assets/css/style.css">
+  <link rel="stylesheet" href="./assets/css/style.css?v=20261031_03">
 </head>
 <body>
 
@@ -261,15 +261,38 @@
       </div>
 
       <div class="modal-body">
+        <!-- Section 1: Selected Food Items -->
+        <div class="cart-section-header">
+          <span class="cart-section-badge">1</span>
+          <h4 class="cart-section-title">
+            <span data-i18n="cartItemsHeading">الوجبات والأصناف في طلبك:</span>
+            <span class="cart-items-pill-count" id="cartItemsPillCount">0 أصناف</span>
+          </h4>
+        </div>
+
         <!-- Cart Items List -->
         <div class="cart-items-list" id="cartItemsList">
           <!-- Dynamically populated via app.js -->
         </div>
 
+        <!-- Add More Items Button -->
+        <button type="button" class="cart-add-more-btn" onclick="closeModal('cartModal')">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+          </svg>
+          <span data-i18n="addMoreItemsBtn">+ إضافة وجبات أخرى من المنيو</span>
+        </button>
+
         <!-- Total Price Box -->
         <div class="order-summary-box">
           <span class="order-total-label" data-i18n="totalPrice">الإجمالي:</span>
           <span class="order-total-amount" id="cartTotalAmount">0 ج.م</span>
+        </div>
+
+        <!-- Section 2: Delivery & Contact Details -->
+        <div class="cart-section-header" style="margin-top: 0.85rem;">
+          <span class="cart-section-badge">2</span>
+          <h4 class="cart-section-title" data-i18n="checkoutDetailsHeading">بيانات التوصيل والتأكيد:</h4>
         </div>
 
         <!-- Order Type Selection -->
@@ -584,6 +607,6 @@
 
   <!-- Scripts -->
   <script src="./assets/js/qrcode.min.js"></script>
-  <script src="./assets/js/app.js"></script>
+  <script src="./assets/js/app.js?v=20261031_03"></script>
 </body>
 </html>

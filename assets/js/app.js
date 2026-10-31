@@ -139,6 +139,9 @@ const I18N = {
     browseMenuBtn: "تصفح المنيو الآن",
     specialNotePlaceholder: "ملاحظة خاصة بالصنف (بدون شطة، صوص زيادة...)",
     removeCartItemTitle: "حذف الصنف من السلة",
+    cartItemsHeading: "الوجبات والأصناف في طلبك:",
+    checkoutDetailsHeading: "بيانات التوصيل والتأكيد:",
+    addMoreItemsBtn: "+ إضافة وجبات أخرى من المنيو",
     serviceNotice: "⭐ يضاف 12% خدمة داخل الصالة - جميع الأسعار شاملة ضريبة القيمة المضافة."
   },
   en: {
@@ -252,6 +255,9 @@ const I18N = {
     browseMenuBtn: "Browse Menu Now",
     specialNotePlaceholder: "Special note (no spicy, extra sauce...)",
     removeCartItemTitle: "Remove item from cart",
+    cartItemsHeading: "Items in your order:",
+    checkoutDetailsHeading: "Delivery & Checkout details:",
+    addMoreItemsBtn: "+ Add more items from menu",
     serviceNotice: "⭐ 12% Dine-in service charge applies - All prices are VAT inclusive."
   }
 };
@@ -4762,6 +4768,12 @@ function updateCartDisplay() {
     clearHeadBtn.style.display = totalCount > 0 ? "inline-flex" : "none";
   }
 
+  // Update Section Pill Count in Modal
+  const pillCount = document.getElementById("cartItemsPillCount");
+  if (pillCount) {
+    pillCount.textContent = `${totalCount} ${dict.itemsCountSuffix}`;
+  }
+
   // Sync In-Card Controllers
   updateAllCardCtas();
 
@@ -4775,7 +4787,7 @@ function renderCartModalItems() {
   if (!container) return;
 
   const isAr = currentLanguage === "ar";
-  const dict = I18N[currentLanguage];
+  const dict = I18N[currentLanguage] || I18N.ar;
 
   if (cartItems.length === 0) {
     container.innerHTML = `
@@ -4792,13 +4804,15 @@ function renderCartModalItems() {
     return;
   }
 
-  const totalPrice = cartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+  const totalPrice = cartItems.reduce((acc, it) => acc + ((Number(it.price) || 0) * (Number(it.quantity) || 1)), 0);
   if (totalEl) totalEl.textContent = `${totalPrice} ${dict.egp}`;
 
   container.innerHTML = cartItems.map((item) => {
-    const title = isAr ? item.nameAr : item.nameEn;
+    const title = (isAr ? item.nameAr : item.nameEn) || item.nameAr || item.id || "";
     const size = isAr ? item.sizeLabelAr : item.sizeLabelEn;
-    const subtotal = item.price * item.quantity;
+    const itemPrice = Number(item.price) || 0;
+    const itemQty = Number(item.quantity) || 1;
+    const subtotal = itemPrice * itemQty;
     const itemNote = item.note || "";
 
     return `
@@ -4806,20 +4820,20 @@ function renderCartModalItems() {
         <div class="cart-item-main">
           <div class="cart-item-info">
             <div class="cart-item-header-line">
-              <span class="cart-item-title">${title}</span>
-              ${size ? `<span class="cart-item-size">(${size})</span>` : ""}
+              <span class="cart-item-title">${escapeHtml(title)}</span>
+              ${size ? `<span class="cart-item-size">(${escapeHtml(size)})</span>` : ""}
             </div>
             <div class="cart-item-pricing">
-              <span class="cart-item-unit-price">${item.price} ${dict.egp}</span>
-              <span class="cart-item-mult">× ${item.quantity}</span>
+              <span class="cart-item-unit-price">${itemPrice} ${dict.egp}</span>
+              <span class="cart-item-mult">× ${itemQty}</span>
               <span class="cart-item-subtotal">= ${subtotal} ${dict.egp}</span>
             </div>
           </div>
           <div class="cart-item-controls">
             <button type="button" class="qty-btn" onclick="decreaseCartItem('${item.cartItemId}')" aria-label="Decrease">−</button>
-            <span class="qty-display">${item.quantity}</span>
+            <span class="qty-display">${itemQty}</span>
             <button type="button" class="qty-btn" onclick="increaseCartItem('${item.cartItemId}')" aria-label="Increase">+</button>
-            <button type="button" class="cart-remove-btn" onclick="removeCartItem('${item.cartItemId}')" title="${dict.removeCartItemTitle}" aria-label="${dict.removeCartItemTitle}">
+            <button type="button" class="cart-remove-btn" onclick="removeCartItem('${item.cartItemId}')" title="${dict.removeCartItemTitle || 'حذف'}" aria-label="${dict.removeCartItemTitle || 'حذف'}">
               <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -4829,7 +4843,7 @@ function renderCartModalItems() {
         <input 
           type="text" 
           class="cart-item-note-input" 
-          placeholder="${dict.specialNotePlaceholder}" 
+          placeholder="${dict.specialNotePlaceholder || 'ملاحظة خاصة بالطلب'}" 
           value="${escapeHtml(itemNote)}" 
           oninput="updateCartItemNote('${item.cartItemId}', this.value)"
         />
@@ -5302,11 +5316,31 @@ function setupModalHandlers() {
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (!modal) return;
+
+  // Unfocus any active element to prevent browser auto-scroll jumping
+  if (document.activeElement && typeof document.activeElement.blur === "function") {
+    document.activeElement.blur();
+  }
+
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
 
+  const modalBody = modal.querySelector(".modal-body");
+  if (modalBody) {
+    modalBody.scrollTop = 0;
+  }
+
   if (modalId === "cartModal") {
     updateCartDisplay();
+    if (modalBody) {
+      modalBody.scrollTop = 0;
+      requestAnimationFrame(() => {
+        if (modalBody) modalBody.scrollTop = 0;
+      });
+      setTimeout(() => {
+        if (modalBody) modalBody.scrollTop = 0;
+      }, 35);
+    }
   } else if (modalId === "qrModal") {
     initQrCode();
   }
