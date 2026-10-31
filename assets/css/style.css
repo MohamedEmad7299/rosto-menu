@@ -645,24 +645,25 @@ html[dir="ltr"] .menu-search-input {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(229, 9, 20, 0.15);
 }
 
-/* Top Badge */
+/* Top Badge Wrap & Badges - Natural In-Flow, Zero Overlap */
+.food-card-badge-wrap {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
 .food-card-badge {
-  position: absolute;
-  top: 0.85rem;
-  left: 0.85rem;
-  padding: 0.25rem 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
   border-radius: var(--radius-full);
   font-size: 0.72rem;
   font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  z-index: 2;
-}
-
-html[dir="ltr"] .food-card-badge {
-  left: auto;
-  right: 0.85rem;
+  line-height: 1.2;
+  position: static !important;
+  width: fit-content;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .badge-new {
@@ -706,12 +707,9 @@ html[dir="ltr"] .food-card-badge {
   font-weight: 800;
   color: var(--text-main);
   line-height: 1.35;
-  padding-left: 2rem;
-}
-
-html[dir="ltr"] .food-title {
-  padding-left: 0;
-  padding-right: 2rem;
+  padding: 0 !important;
+  margin: 0;
+  word-break: break-word;
 }
 
 .food-desc {
@@ -736,6 +734,8 @@ html[dir="ltr"] .food-title {
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
   transition: all var(--duration-fast) var(--ease);
+  white-space: nowrap;
+  user-select: none;
 }
 
 .option-pill:hover {
@@ -758,24 +758,28 @@ html[dir="ltr"] .food-title {
   gap: 0.75rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
 }
 
 .food-price-wrap {
   display: flex;
   align-items: baseline;
   gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 .food-price {
   font-size: 1.35rem;
   font-weight: 900;
   color: var(--text-main);
+  white-space: nowrap;
 }
 
 .food-currency {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--rosto-red-light);
+  white-space: nowrap;
 }
 
 .add-cart-btn {
@@ -791,6 +795,8 @@ html[dir="ltr"] .food-title {
   border: 1px solid var(--rosto-red-light);
   box-shadow: 0 3px 12px var(--rosto-red-glow);
   transition: all var(--duration-fast) var(--ease);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .add-cart-btn:hover {
@@ -885,12 +891,15 @@ html[dir="ltr"] .food-title {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .branch-name {
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-main);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .branch-tag {
@@ -902,6 +911,7 @@ html[dir="ltr"] .food-title {
   color: var(--rosto-red-light);
   border: 1px solid rgba(229, 9, 20, 0.35);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .branch-info-list {
@@ -1102,12 +1112,18 @@ html[dir="ltr"] .food-title {
   align-items: center;
   gap: 0.45rem;
   color: var(--text-main);
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .modal-close-btn {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
+  flex-shrink: 0;
   background: #1f1f27;
   color: var(--text-muted);
   display: flex;
@@ -1560,6 +1576,20 @@ html[dir="ltr"] .flyer-nav-arrow.next {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-main);
+  gap: 0.75rem;
+}
+
+#flyerPageTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#flyerPageCounter {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .flyer-thumbs-strip {

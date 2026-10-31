@@ -4501,8 +4501,8 @@ function renderMenuItems() {
 
     return `
       <div class="food-card" id="card-${item.id}">
-        ${badgeHtml}
         <div class="food-card-header">
+          ${badgeHtml ? `<div class="food-card-badge-wrap">${badgeHtml}</div>` : ""}
           <h3 class="food-title">${name}</h3>
           ${desc ? `<p class="food-desc">${desc}</p>` : ""}
         </div>
