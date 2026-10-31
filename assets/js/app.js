@@ -135,6 +135,10 @@ const I18N = {
     featuredBranchBadge: "الفرع الرئيسي",
     itemsCountSuffix: "أصناف",
     clearCart: "تفريغ السلة",
+    clearCartBtn: "مسح السلة",
+    browseMenuBtn: "تصفح المنيو الآن",
+    specialNotePlaceholder: "ملاحظة خاصة بالصنف (بدون شطة، صوص زيادة...)",
+    removeCartItemTitle: "حذف الصنف من السلة",
     serviceNotice: "⭐ يضاف 12% خدمة داخل الصالة - جميع الأسعار شاملة ضريبة القيمة المضافة."
   },
   en: {
@@ -244,6 +248,10 @@ const I18N = {
     featuredBranchBadge: "Main Branch",
     itemsCountSuffix: "items",
     clearCart: "Clear Cart",
+    clearCartBtn: "Clear Cart",
+    browseMenuBtn: "Browse Menu Now",
+    specialNotePlaceholder: "Special note (no spicy, extra sauce...)",
+    removeCartItemTitle: "Remove item from cart",
     serviceNotice: "⭐ 12% Dine-in service charge applies - All prices are VAT inclusive."
   }
 };
@@ -4280,6 +4288,9 @@ const CATEGORIES = [
 // INITIALIZATION
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
+  // Load persisted cart from localStorage
+  loadCartFromStorage();
+
   // Apply persisted language
   applyLanguage(currentLanguage);
 
@@ -4292,6 +4303,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render Branches Section & Radio List
   renderBranchesList();
   renderBranchRadioList();
+
+  // Sync Initial Cart State
+  updateCartDisplay();
 
   // Setup Modals
   setupModalHandlers();
@@ -4499,8 +4513,10 @@ function renderMenuItems() {
       `;
     }
 
+    const isItemInCart = getItemCurrentCartQty(item.id) > 0;
+
     return `
-      <div class="food-card" id="card-${item.id}">
+      <div class="food-card ${isItemInCart ? "in-cart" : ""}" id="card-${item.id}">
         <div class="food-card-header">
           ${badgeHtml ? `<div class="food-card-badge-wrap">${badgeHtml}</div>` : ""}
           <h3 class="food-title">${name}</h3>
@@ -4514,12 +4530,9 @@ function renderMenuItems() {
             <span class="food-price" id="price-${item.id}">${activePrice}</span>
             <span class="food-currency">${dict.egp}</span>
           </div>
-          <button type="button" class="add-cart-btn" onclick="addItemToCart('${item.id}')">
-            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>${dict.addToOrder}</span>
-          </button>
+          <div class="card-cta-wrap" id="cta-wrap-${item.id}">
+            ${getCardCtaHtml(item)}
+          </div>
         </div>
       </div>
     `;
@@ -4544,12 +4557,127 @@ function changeItemOption(itemId, optionIndex) {
     pills.forEach((p, idx) => {
       p.classList.toggle("active", idx === optionIndex);
     });
+
+    const ctaWrap = document.getElementById(`cta-wrap-${itemId}`);
+    if (ctaWrap) {
+      ctaWrap.innerHTML = getCardCtaHtml(item);
+    }
+    const qty = getItemCurrentCartQty(itemId);
+    card.classList.toggle("in-cart", qty > 0);
   }
 }
 
 // ==========================================================================
 // CART & FLOATING BAR LOGIC
 // ==========================================================================
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function saveCartToStorage() {
+  try {
+    localStorage.setItem("rosto_cart", JSON.stringify(cartItems));
+  } catch (e) {}
+}
+
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem("rosto_cart");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        cartItems = parsed;
+      }
+    }
+  } catch (e) {}
+}
+
+function getItemCurrentCartQty(itemId) {
+  const item = MENU_ITEMS.find((it) => it.id === itemId);
+  if (!item) return 0;
+  const hasOptions = Array.isArray(item.options) && item.options.length > 0;
+  const selectedOpt = hasOptions ? item.options[item.selectedOption || 0] : null;
+  const cartItemId = hasOptions ? `${item.id}_${selectedOpt.key}` : item.id;
+  const cartEntry = cartItems.find((ci) => ci.cartItemId === cartItemId);
+  return cartEntry ? cartEntry.quantity : 0;
+}
+
+function getCardCtaHtml(item) {
+  const dict = I18N[currentLanguage];
+  const qty = getItemCurrentCartQty(item.id);
+
+  if (qty > 0) {
+    return `
+      <div class="card-qty-controller">
+        <button type="button" class="card-qty-btn minus" onclick="decreaseItemFromCard('${item.id}')" aria-label="Decrease quantity">−</button>
+        <span class="card-qty-num">${qty}</span>
+        <button type="button" class="card-qty-btn plus" onclick="addItemToCart('${item.id}')" aria-label="Increase quantity">+</button>
+      </div>
+    `;
+  }
+
+  return `
+    <button type="button" class="add-cart-btn" onclick="addItemToCart('${item.id}')">
+      <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>${dict.addToOrder}</span>
+    </button>
+  `;
+}
+
+function decreaseItemFromCard(itemId) {
+  const item = MENU_ITEMS.find((it) => it.id === itemId);
+  if (!item) return;
+
+  const hasOptions = Array.isArray(item.options) && item.options.length > 0;
+  const selectedOpt = hasOptions ? item.options[item.selectedOption || 0] : null;
+  const cartItemId = hasOptions ? `${item.id}_${selectedOpt.key}` : item.id;
+
+  decreaseCartItem(cartItemId);
+}
+
+function updateAllCardCtas() {
+  MENU_ITEMS.forEach((item) => {
+    const ctaWrap = document.getElementById(`cta-wrap-${item.id}`);
+    const card = document.getElementById(`card-${item.id}`);
+    if (ctaWrap) {
+      ctaWrap.innerHTML = getCardCtaHtml(item);
+    }
+    if (card) {
+      const qty = getItemCurrentCartQty(item.id);
+      card.classList.toggle("in-cart", qty > 0);
+    }
+  });
+}
+
+let toastTimeout = null;
+function showToastNotification(title, subtitle) {
+  const toast = document.getElementById("appToastNotification");
+  const titleEl = document.getElementById("toastTitle");
+  const descEl = document.getElementById("toastDesc");
+  const actionBtn = document.getElementById("toastActionBtn");
+  if (!toast) return;
+
+  const isAr = currentLanguage === "ar";
+  if (titleEl) titleEl.textContent = title;
+  if (descEl) descEl.textContent = subtitle || (isAr ? "اضغط هنا لعرض السلة وإتمام الطلب" : "Tap to view order & checkout");
+  if (actionBtn) actionBtn.textContent = isAr ? "عرض السلة" : "View Cart";
+
+  toast.classList.add("visible");
+
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove("visible");
+  }, 3500);
+}
+
 function addItemToCart(itemId) {
   const item = MENU_ITEMS.find((it) => it.id === itemId);
   if (!item) return;
@@ -4575,7 +4703,8 @@ function addItemToCart(itemId) {
       sizeLabelAr,
       sizeLabelEn,
       price: itemPrice,
-      quantity: 1
+      quantity: 1,
+      note: ""
     });
   }
 
@@ -4591,9 +4720,17 @@ function addItemToCart(itemId) {
       { transform: "translateX(-50%) scale(1)" }
     ], { duration: 250 });
   }
+
+  // Toast Notification
+  const name = isAr ? item.nameAr : item.nameEn;
+  const size = selectedOpt ? (isAr ? ` (${selectedOpt.labelAr})` : ` (${selectedOpt.labelEn})`) : "";
+  const toastMsg = isAr ? `تمت الإضافة: ${name}${size}` : `Added: ${name}${size}`;
+  showToastNotification(toastMsg);
 }
 
 function updateCartDisplay() {
+  saveCartToStorage();
+
   const totalCount = cartItems.reduce((acc, it) => acc + it.quantity, 0);
   const totalPrice = cartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
   const dict = I18N[currentLanguage];
@@ -4619,6 +4756,15 @@ function updateCartDisplay() {
     }
   }
 
+  // Clear Cart Header Button in Modal
+  const clearHeadBtn = document.getElementById("cartClearHeadBtn");
+  if (clearHeadBtn) {
+    clearHeadBtn.style.display = totalCount > 0 ? "inline-flex" : "none";
+  }
+
+  // Sync In-Card Controllers
+  updateAllCardCtas();
+
   // Cart Modal Body
   renderCartModalItems();
 }
@@ -4633,10 +4779,13 @@ function renderCartModalItems() {
 
   if (cartItems.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2rem 1rem;">
-        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🛒</span>
-        <h4 style="font-weight: 800; margin-bottom: 0.25rem;">${dict.emptyCartTitle}</h4>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">${dict.emptyCartDesc}</p>
+      <div style="text-align: center; padding: 2.2rem 1rem;">
+        <span style="font-size: 2.8rem; display: block; margin-bottom: 0.5rem;">🛒</span>
+        <h4 style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.35rem; color: #fff;">${dict.emptyCartTitle}</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">${dict.emptyCartDesc}</p>
+        <button type="button" class="btn btn-primary" onclick="closeModal('cartModal')" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: var(--radius-full); margin: 0 auto; display: inline-flex;">
+          ${dict.browseMenuBtn}
+        </button>
       </div>
     `;
     if (totalEl) totalEl.textContent = `0 ${dict.egp}`;
@@ -4650,19 +4799,40 @@ function renderCartModalItems() {
     const title = isAr ? item.nameAr : item.nameEn;
     const size = isAr ? item.sizeLabelAr : item.sizeLabelEn;
     const subtotal = item.price * item.quantity;
+    const itemNote = item.note || "";
 
     return `
-      <div class="cart-item-row">
-        <div class="cart-item-info">
-          <span class="cart-item-title">${title}</span>
-          ${size ? `<span class="cart-item-size">(${size})</span>` : ""}
-          <span class="cart-item-price">${item.price} × ${item.quantity} = ${subtotal} ${dict.egp}</span>
+      <div class="cart-item-row" id="cart-row-${item.cartItemId}">
+        <div class="cart-item-main">
+          <div class="cart-item-info">
+            <div class="cart-item-header-line">
+              <span class="cart-item-title">${title}</span>
+              ${size ? `<span class="cart-item-size">(${size})</span>` : ""}
+            </div>
+            <div class="cart-item-pricing">
+              <span class="cart-item-unit-price">${item.price} ${dict.egp}</span>
+              <span class="cart-item-mult">× ${item.quantity}</span>
+              <span class="cart-item-subtotal">= ${subtotal} ${dict.egp}</span>
+            </div>
+          </div>
+          <div class="cart-item-controls">
+            <button type="button" class="qty-btn" onclick="decreaseCartItem('${item.cartItemId}')" aria-label="Decrease">−</button>
+            <span class="qty-display">${item.quantity}</span>
+            <button type="button" class="qty-btn" onclick="increaseCartItem('${item.cartItemId}')" aria-label="Increase">+</button>
+            <button type="button" class="cart-remove-btn" onclick="removeCartItem('${item.cartItemId}')" title="${dict.removeCartItemTitle}" aria-label="${dict.removeCartItemTitle}">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="cart-item-controls">
-          <button type="button" class="qty-btn" onclick="decreaseCartItem('${item.cartItemId}')">-</button>
-          <span class="qty-display">${item.quantity}</span>
-          <button type="button" class="qty-btn" onclick="increaseCartItem('${item.cartItemId}')">+</button>
-        </div>
+        <input 
+          type="text" 
+          class="cart-item-note-input" 
+          placeholder="${dict.specialNotePlaceholder}" 
+          value="${escapeHtml(itemNote)}" 
+          oninput="updateCartItemNote('${item.cartItemId}', this.value)"
+        />
       </div>
     `;
   }).join("");
@@ -4684,6 +4854,19 @@ function decreaseCartItem(cartItemId) {
       cartItems = cartItems.filter((ci) => ci.cartItemId !== cartItemId);
     }
     updateCartDisplay();
+  }
+}
+
+function removeCartItem(cartItemId) {
+  cartItems = cartItems.filter((ci) => ci.cartItemId !== cartItemId);
+  updateCartDisplay();
+}
+
+function updateCartItemNote(cartItemId, note) {
+  const item = cartItems.find((ci) => ci.cartItemId === cartItemId);
+  if (item) {
+    item.note = note.trim();
+    saveCartToStorage();
   }
 }
 
@@ -4761,6 +4944,9 @@ function sendOrderWhatsApp() {
     const size = isAr ? it.sizeLabelAr : it.sizeLabelEn;
     const sub = it.price * it.quantity;
     msg += `${idx + 1}. *${title}*${size ? " (" + size + ")" : ""} × ${it.quantity} = ${sub} ج.م\n`;
+    if (it.note) {
+      msg += `   ↳ ملاحظة: ${it.note}\n`;
+    }
   });
 
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
@@ -5119,7 +5305,9 @@ function openModal(modalId) {
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
 
-  if (modalId === "qrModal") {
+  if (modalId === "cartModal") {
+    updateCartDisplay();
+  } else if (modalId === "qrModal") {
     initQrCode();
   }
 }
