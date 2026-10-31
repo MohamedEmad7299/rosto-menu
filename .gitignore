@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+build_app_js.js
+build_full_app.js
+generate_menu.js
+assets/js/app_part1.js
+assets/js/menu_items.json

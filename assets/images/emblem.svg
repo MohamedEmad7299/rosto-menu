@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="emblemRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a3b"/>
+      <stop offset="50%" stop-color="#e50914"/>
+      <stop offset="100%" stop-color="#a8050e"/>
+    </linearGradient>
+    <filter id="emblemGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle with subtle red neon rim -->
+  <circle cx="60" cy="60" r="56" fill="#121212" stroke="url(#emblemRedGrad)" stroke-width="3"/>
+  <circle cx="60" cy="60" r="51" fill="#1a1a1a" opacity="0.6"/>
+
+  <!-- Crown on Top -->
+  <g fill="url(#emblemRedGrad)">
+    <circle cx="38" cy="24" r="2.8"/>
+    <circle cx="48" cy="18" r="3"/>
+    <circle cx="60" cy="16" r="3.5"/>
+    <circle cx="72" cy="18" r="3"/>
+    <circle cx="82" cy="24" r="2.8"/>
+    <path d="M 37 26 L 43 38 L 52 23 L 60 38 L 68 23 L 77 38 L 83 26 C 75 30 65 31 60 31 C 55 31 45 30 37 26 Z"/>
+  </g>
+
+  <!-- Flaming wings on left -->
+  <g fill="url(#emblemRedGrad)" filter="url(#emblemGlow)">
+    <path d="M 45 48 C 32 46, 18 42, 8 36 C 16 43, 26 48, 38 52 C 22 52, 12 50, 6 46 C 14 55, 26 62, 38 64 C 20 66, 10 72, 6 80 C 16 80, 28 78, 42 75 Z"/>
+    <path d="M 40 76 C 26 84, 15 94, 10 102 C 22 98, 34 90, 48 85 Z"/>
+  </g>
+
+  <!-- Stylized R -->
+  <text x="46" y="86" font-family="'Impact', 'Arial Black', sans-serif" font-weight="900" font-size="64" font-style="italic" fill="url(#emblemRedGrad)">R</text>
+
+  <!-- Small text ROSTO at bottom -->
+  <text x="60" y="106" font-family="'Impact', 'Arial Black', sans-serif" font-weight="900" font-size="13" fill="#ffffff" text-anchor="middle" letter-spacing="2">ROSTO</text>
+</svg>
